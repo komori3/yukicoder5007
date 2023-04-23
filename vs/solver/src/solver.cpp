@@ -125,6 +125,7 @@ int xs[N + M + 1];
 int ys[N + M + 1];
 
 int C[N + M + 1][N + M + 1];
+int nxt[N + M + 1][N + M + 1];
 
 int ps[N + 1];
 
@@ -140,6 +141,21 @@ void initialize(std::istream& in) {
         for (int v = u + 1; v <= N; v++) {
             int d2 = (xs[u] - xs[v]) * (xs[u] - xs[v]) + (ys[u] - ys[v]) * (ys[u] - ys[v]);
             C[u][v] = C[v][u] = d2 * alpha * alpha;
+        }
+    }
+    for (int u = 1; u <= N; u++) {
+        for (int v = 1; v <= N; v++) {
+            nxt[u][v] = v;
+        }
+    }
+    for (int k = 1; k <= N; k++) {
+        for (int u = 1; u <= N; u++) {
+            for (int v = 1; v <= N; v++) {
+                if (C[u][k] + C[k][v] < C[u][v]) {
+                    C[u][v] = C[u][k] + C[k][v];
+                    nxt[u][v] = nxt[u][k];
+                }
+            }
         }
     }
 }
@@ -208,9 +224,19 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     for (int i = 0; i < M; i++) {
         out << "0 0\n";
     }
-    out << N + 1 << '\n';
+
+    vector<int> ans;
     for (int i = 0; i < N; i++) {
-        out << 1 << ' ' << ps[i] << '\n';
+        int from = ps[i], to = ps[i + 1];
+        while (from != to) {
+            ans.push_back(from);
+            from = nxt[from][to];
+        }
+    }
+    ans.push_back(1);
+    out << ans.size() << '\n';
+    for (int u : ans) {
+        out << 1 << ' ' << u << '\n';
     }
     out << "1 1" << '\n';
 
