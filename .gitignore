@@ -1,0 +1,4 @@
+.vs
+tools
+vs/*/bin
+vs/*/obj
