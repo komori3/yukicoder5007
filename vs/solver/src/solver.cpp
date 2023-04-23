@@ -152,12 +152,14 @@ int calc_cost() {
     return cost;
 }
 
-int calc_diff(int i, int j) {
+inline int calc_diff(int i, int j) {
     int u1 = ps[i], u2 = ps[i + 1], v1 = ps[j], v2 = ps[j + 1];
     return C[u1][v1] + C[u2][v2] - C[u1][u2] - C[v1][v2];
 }
 
-
+inline double get_temp(double stemp, double etemp, double t, double T) {
+    return etemp + (stemp - etemp) * (T - t) / T;
+}
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
@@ -186,13 +188,18 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
     Xorshift rnd;
     int cost = calc_cost();
-    while (timer.elapsed_ms() < 950) {
+    double stime = timer.elapsed_ms(), ntime, etime = 950;
+    size_t loop = 0;
+    while ((ntime = timer.elapsed_ms()) < etime) {
+        loop++;
         int i = rnd.next_int(N);
         int j = rnd.next_int(N - 1);
         j += (i == j);
         if (i > j) std::swap(i, j);
         int diff = calc_diff(i, j);
-        if (diff < 0) {
+        double temp = get_temp(1e5, 0, ntime - stime, etime - stime);
+        double prob = exp(-diff / temp);
+        if (rnd.next_double() < prob) {
             std::reverse(ps + i + 1, ps + j + 1);
             cost += diff;
         }
