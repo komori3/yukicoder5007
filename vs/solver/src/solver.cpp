@@ -59,12 +59,12 @@ public:
     Timer() { reset(); }
     static double time() {
 #ifdef _MSC_VER
-        return __rdtsc() / 3.0e9;
+        return __rdtsc() / 2.3e9;
 #else
         unsigned long long a, d;
         __asm__ volatile("rdtsc"
             : "=a"(a), "=d"(d));
-        return (d << 32 | a) / 3.0e9;
+        return (d << 32 | a) / 2.3e9;
 #endif
     }
     void reset() { t = time(); }
@@ -126,6 +126,8 @@ int ys[N + M + 1];
 
 int C[N + M + 1][N + M + 1];
 
+int ps[N + 1];
+
 
 
 void initialize(std::istream& in) {
@@ -142,6 +144,21 @@ void initialize(std::istream& in) {
     }
 }
 
+int calc_cost() {
+    int cost = 0;
+    for (int i = 0; i < N; i++) {
+        cost += C[ps[i]][ps[i + 1]];
+    }
+    return cost;
+}
+
+int calc_diff(int i, int j) {
+    int u1 = ps[i], u2 = ps[i + 1], v1 = ps[j], v2 = ps[j + 1];
+    return C[u1][v1] + C[u2][v2] - C[u1][u2] - C[v1][v2];
+}
+
+
+
 int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
     Timer timer;
@@ -150,7 +167,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
     cv::utils::logging::setLogLevel(cv::utils::logging::LogLevel::LOG_LEVEL_SILENT);
 #endif
 
-#ifdef _MSC_VER
+#if 0
     std::ifstream ifs("../../tools/in/0000.txt");
     std::istream& in = ifs;
     std::ofstream ofs("../../tools/out/0000.txt");
@@ -162,14 +179,33 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
 
     initialize(in);
 
+    for (int i = 0; i < N; i++) {
+        ps[i] = i + 1;
+    }
+    ps[N] = 1;
+
+    Xorshift rnd;
+    int cost = calc_cost();
+    while (timer.elapsed_ms() < 950) {
+        int i = rnd.next_int(N);
+        int j = rnd.next_int(N - 1);
+        j += (i == j);
+        if (i > j) std::swap(i, j);
+        int diff = calc_diff(i, j);
+        if (diff < 0) {
+            std::reverse(ps + i + 1, ps + j + 1);
+            cost += diff;
+        }
+    }
+
     for (int i = 0; i < M; i++) {
-        cout << "0 0\n";
+        out << "0 0\n";
     }
-    cout << N + 1 << '\n';
-    for (int i = 1; i <= N; i++) {
-        cout << 1 << ' ' << i << '\n';
+    out << N + 1 << '\n';
+    for (int i = 0; i < N; i++) {
+        out << 1 << ' ' << ps[i] << '\n';
     }
-    cout << "1 1" << '\n';
+    out << "1 1" << '\n';
 
     return 0;
 }
